@@ -1,16 +1,17 @@
 #include "io.h"
 #include "utils.h"
 
-enum marker{
+enum flag{
   si = 1,
   no = 0
 };
 
 typedef struct
 {
-  enum marker marker_flag;
-  char prefijo[4]; //primer byte es flag de marker (1 es marker)
+  enum flag marker_flag;
+  char prefijo[4];
   char siguiente_salto[2];
+  enum flag prefix_flag;
 }prefijo;
 
 typedef struct {
