@@ -9,9 +9,9 @@ enum flag{
 typedef struct
 {
   enum flag marker_flag;
-  char prefijo[4];
-  char siguiente_salto[2];
   enum flag prefix_flag;
+  uint32_t prefijo;// primer bit: 1-> prefix;
+  short siguiente_salto;
 }prefijo;
 
 typedef struct {
