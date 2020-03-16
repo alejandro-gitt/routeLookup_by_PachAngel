@@ -52,6 +52,14 @@ nodo *crearNodo(nodo *raiz, char n){
   return NULL;
 }
 
+void free_tree(nodo *raiz){
+  if(raiz->left != NULL) free_tree(raiz->left);
+  if(raiz->right != NULL) free_tree(raiz->right);
+  if(raiz->tabla != NULL) free(raiz->tabla);
+  free(raiz);
+  return;
+}
+
 int main(void){
   nodo *raiz = (nodo*)malloc(sizeof(nodo));
   raiz->n = 16;
@@ -59,10 +67,6 @@ int main(void){
   raiz->left = NULL;
   raiz->right = NULL;
   crearNodo(raiz,6);
-  free(raiz->left->tabla);
-  printf("1\n");
-  free(raiz->left);
-  free(raiz->tabla);
-  free(raiz);
+  free_tree(raiz);
   return 0;
 }
