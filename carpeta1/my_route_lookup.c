@@ -60,13 +60,52 @@ void free_tree(nodo *raiz){
   return;
 }
 
-int main(void){
+int main(int argc, char *argv[]){
+
+  if(argc != 3) return -1;
+
+  int errno;
+  uint32_t prefix;
+  int prefixLength;
+  int outInterface;
+
+  nodo *currentNode;
+  int currentLength;
+
   nodo *raiz = (nodo*)malloc(sizeof(nodo));
   raiz->n = 16;
   raiz->tabla = (prefijo*)malloc(sizeof(prefijo)*2);
   raiz->left = NULL;
   raiz->right = NULL;
-  crearNodo(raiz,6);
-  free_tree(raiz);
-  return 0;
+
+  currentNode = raiz;
+
+  errno = initializeIO(argv[1],argv[2]);
+  if(errno != OK){
+    printIOExplanationError(errno);
+    return -1;
+  }
+
+  do{
+    errno = readFIBLine(&prefix, &prefixLength, &outInterface)
+    if(errno != OK && errno != REACHED_EOF){
+      printIOExplanationError(errno);
+      return -1;
+    }
+    else if(errno == OK){
+      while(currentNode->n != prefixLength){
+        if(currentNode->n > prefixLength){
+          if(currentNode->left == NULL) crearNodo(raiz,prefixLength);
+          currentNode = currentNode->left;
+        }
+        else{
+          if(currentNode->right == NULL) crearNodo(raiz,prefixLength);
+          currentNode = currentNode->right;
+        }
+      }
+      //currentNode->tabla[hash(prefix,sizeof(currentNode, TAMAÑO DE LA TABLA :(
+      //NECESITAMOS UN ELEMENTO EN EL NODO QUE INDIQUE EL TAMAÑO DE SU TABLA
+    }
+  }while(errno != REACHED_EOF)
+
 }
