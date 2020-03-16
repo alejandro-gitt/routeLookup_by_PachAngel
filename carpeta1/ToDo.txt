@@ -1,6 +1,6 @@
 -Función crearNodo (ÁNGEL, HECHO)
 -Función resizeTabla (PACHECO)
--Función freeArbol
+-Función free_tree (ÁNGEL, HECHO)
 -Algoritmo de rellenado del árbol
 -Algoritmo de búsqueda del next-hop
 -Añadir algoritmo intermedio de markers
