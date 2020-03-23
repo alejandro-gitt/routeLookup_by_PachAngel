@@ -74,6 +74,8 @@ int main(int argc, char *argv[]){
 
   nodo *currentNode;
 
+  int counter = 0;
+
   nodo *raiz = (nodo*)malloc(sizeof(nodo));
   raiz->n = 16;
   raiz->tabla = (prefijo*)malloc(sizeof(prefijo)*2);
@@ -92,6 +94,8 @@ int main(int argc, char *argv[]){
 
   do{
     errno = readFIBLine(&prefix, &prefixLength, &outInterface);
+    currentNode = raiz;
+    printf("%i\n", counter);
     if(errno != OK && errno != REACHED_EOF){
       printIOExplanationError(errno);
       return -1;
@@ -100,18 +104,18 @@ int main(int argc, char *argv[]){
 
       while(currentNode->n != prefixLength){
         if(currentNode->n > prefixLength){
-          if(currentNode->left == NULL) currentNode->left = crearNodo(raiz,prefixLength);
+          if(currentNode->left == NULL) crearNodo(raiz,prefixLength);
           currentNode = currentNode->left;
         }
         else{
-          if(currentNode->right == NULL) currentNode->right = crearNodo(raiz,prefixLength);
+          if(currentNode->right == NULL) crearNodo(raiz,prefixLength);
           currentNode = currentNode->right;
         }
       }
-      printf("%i\n",currentNode->n);// hay una violacion de segmento por como esta definida la tabla (punteros...)
       currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
       currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
     }
+    counter += 1;
   }while(errno != REACHED_EOF);
 
 }
