@@ -16,6 +16,7 @@ typedef struct prefijo{
 typedef struct nodo{
   char n;
   prefijo *tabla;
+  int size_tabla;
   struct nodo *left;
   struct nodo *right;
 }nodo;
@@ -30,6 +31,7 @@ nodo *crearNodo(nodo *raiz, char n){
         nodo *nodo_aux = (nodo*)malloc(sizeof(nodo));
         nodo_aux->n = n_aux/2;
         nodo_aux->tabla = (prefijo*)malloc(sizeof(prefijo)*2);
+        nodo_aux->size_tabla = 2;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
         raiz->left = nodo_aux;
@@ -42,6 +44,7 @@ nodo *crearNodo(nodo *raiz, char n){
         nodo *nodo_aux = (nodo*)malloc(sizeof(nodo));
         nodo_aux->n = n_aux*2;
         nodo_aux->tabla = (prefijo*)malloc(sizeof(prefijo)*2);
+        nodo_aux->size_tabla = 2;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
         raiz->right = nodo_aux;
@@ -64,21 +67,22 @@ int main(int argc, char *argv[]){
 
   if(argc != 3) return -1;
 
-  int errno;
+  int errno = 0;
   uint32_t prefix;
   int prefixLength;
   int outInterface;
 
   nodo *currentNode;
-  int currentLength;
 
   nodo *raiz = (nodo*)malloc(sizeof(nodo));
   raiz->n = 16;
   raiz->tabla = (prefijo*)malloc(sizeof(prefijo)*2);
+  raiz->size_tabla = 2;
   raiz->left = NULL;
   raiz->right = NULL;
 
   currentNode = raiz;
+
 
   errno = initializeIO(argv[1],argv[2]);
   if(errno != OK){
@@ -87,25 +91,27 @@ int main(int argc, char *argv[]){
   }
 
   do{
-    errno = readFIBLine(&prefix, &prefixLength, &outInterface)
+    errno = readFIBLine(&prefix, &prefixLength, &outInterface);
     if(errno != OK && errno != REACHED_EOF){
       printIOExplanationError(errno);
       return -1;
     }
     else if(errno == OK){
+
       while(currentNode->n != prefixLength){
         if(currentNode->n > prefixLength){
-          if(currentNode->left == NULL) crearNodo(raiz,prefixLength);
+          if(currentNode->left == NULL) currentNode->left = crearNodo(raiz,prefixLength);
           currentNode = currentNode->left;
         }
         else{
-          if(currentNode->right == NULL) crearNodo(raiz,prefixLength);
+          if(currentNode->right == NULL) currentNode->right = crearNodo(raiz,prefixLength);
           currentNode = currentNode->right;
         }
       }
-      //currentNode->tabla[hash(prefix,sizeof(currentNode, TAMAÑO DE LA TABLA :(
-      //NECESITAMOS UN ELEMENTO EN EL NODO QUE INDIQUE EL TAMAÑO DE SU TABLA
+      printf("%i\n",currentNode->n);// hay una violacion de segmento por como esta definida la tabla (punteros...)
+      currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
+      currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
     }
-  }while(errno != REACHED_EOF)
+  }while(errno != REACHED_EOF);
 
 }
