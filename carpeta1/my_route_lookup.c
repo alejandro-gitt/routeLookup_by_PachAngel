@@ -2,24 +2,20 @@
 #include "utils.h"
 #define COEFICIENTE 2
 
-enum flag{
-  si = 1,
-  no = 0
-};
-
 typedef struct
 {
-  enum flag marker_flag;
-  enum flag prefix_flag;
-  uint32_t prefijo;// primer bit: 1-> prefix;
+  char marker_flag;
+  char prefix_flag;
+  uint32_t prefijo;
   short siguiente_salto;
-}prefijo;
+}entrada;
 
 typedef struct {
   char n;
-  prefijo *tabla;
-  nodo *left;
-  nodo *right;
+  entrada *tabla;
+  int size_tabla;
+  struct nodo *left;
+  struct nodo *right;
 }nodo;
 
 /*
@@ -32,22 +28,35 @@ salidas:z
   - nuevo puntero con mayor espacio reservado (COEFICIENTE*tamaño_anterior)
 */
 
-int redimensiona(void *tabla_in){// Puede que debamos añadir una segunda entrada con el nuevo tamaño, de momento es un valor fijo(COEFICIENTE)
-    void *pnt_tmp = realloc(tabla_in , COEFICIENTE*sizeof(tabla_in));
+entrada *redimensiona(entrada *tabla_in,int size_tabla){// Puede que debamos añadir una segunda entrada con el nuevo tamaño, de momento es un valor fijo(COEFICIENTE)
+    entrada *nueva_tabla = calloc(COEFICIENTE*size_tabla,sizeof(entrada));
 
-    if(pnt_tmp == NULL){
+    if(nueva_tabla == NULL){
       printf("%s\n","Asignación fallida");
       return 0;
     }else{
       //Asignación conseguida
-      tabla_in = pnt_tmp;
-      return 1;
+
+      /*Recorremos toda la tabla antigua, extrayendo los prefijos y añadiendolos en la nueva*/
+      int i;
+      for (i = 0; i < size_tabla; i++){
+        if(tabla_in[i].marker_flag == 0 && tabla_in[i].prefix_flag == 0){
+          //es una posición vacía
+        }else{
+          nueva_tabla[hash(tabla_in[i].prefijo,COEFICIENTE*size_tabla)] = tabla_in[i];
+        }
+      }
+      //Hemos recorrido toda la tabla antigua, la desechamos
+      free(tabla_in);
+      return nueva_tabla;
     }
 }
 
 int main(void)
 {
-prefijo *tabla = malloc(sizeof(prefijo)*2);
+entrada *tabla = calloc(2,sizeof(entrada));
+        tabla = redimensiona(tabla , 2);
+
 free(tabla);
 return 0;
 }
