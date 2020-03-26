@@ -1,15 +1,10 @@
 #include "io.h"
 #include "utils.h"
 
-enum flag{
-  si = 1,
-  no = 0
-};
-
 typedef struct prefijo{
-  enum flag marker_flag;
-  enum flag prefix_flag;
-  uint32_t prefijo;// primer bit: 1-> prefix;
+  char marker_flag;
+  char prefix_flag;
+  uint32_t prefijo;
   short siguiente_salto;
 }prefijo;
 
@@ -21,16 +16,16 @@ typedef struct nodo{
   struct nodo *right;
 }nodo;
 
-nodo *crearNodo(nodo *raiz, char n){
+nodo *crearNodo(nodo *raiz, char n, char param_nivel){
   char n_aux = raiz->n;
   if(n_aux == n) return NULL;
   else{
     if(n < n_aux){
-      if(raiz->left != NULL) return crearNodo(raiz->left,n);
+      if(raiz->left != NULL) return crearNodo(raiz->left,n,param_nivel/2);
       else{
-        nodo *nodo_aux = (nodo*)malloc(sizeof(nodo));
-        nodo_aux->n = n_aux/2;
-        nodo_aux->tabla = (prefijo*)malloc(sizeof(prefijo)*2);
+        nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
+        nodo_aux->n = n_aux-param_nivel;
+        nodo_aux->tabla = (prefijo*)calloc(2,sizeof(prefijo));
         nodo_aux->size_tabla = 2;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
@@ -39,11 +34,11 @@ nodo *crearNodo(nodo *raiz, char n){
       }
     }
     else{
-      if(raiz->right != NULL) return crearNodo(raiz->right,n);
+      if(raiz->right != NULL) return crearNodo(raiz->right,n,param_nivel/2);
       else{
-        nodo *nodo_aux = (nodo*)malloc(sizeof(nodo));
-        nodo_aux->n = n_aux*2;
-        nodo_aux->tabla = (prefijo*)malloc(sizeof(prefijo)*2);
+        nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
+        nodo_aux->n = n_aux+param_nivel;
+        nodo_aux->tabla = (prefijo*)calloc(2,sizeof(prefijo));
         nodo_aux->size_tabla = 2;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
@@ -76,9 +71,9 @@ int main(int argc, char *argv[]){
 
   int counter = 0;
 
-  nodo *raiz = (nodo*)malloc(sizeof(nodo));
+  nodo *raiz = (nodo*)calloc(1,sizeof(nodo));
   raiz->n = 16;
-  raiz->tabla = (prefijo*)malloc(sizeof(prefijo)*2);
+  raiz->tabla = (prefijo*)calloc(2,sizeof(prefijo));
   raiz->size_tabla = 2;
   raiz->left = NULL;
   raiz->right = NULL;
@@ -93,9 +88,9 @@ int main(int argc, char *argv[]){
   }
 
   do{
+    printf("%i\n",counter);
     errno = readFIBLine(&prefix, &prefixLength, &outInterface);
     currentNode = raiz;
-    printf("%i\n", counter);
     if(errno != OK && errno != REACHED_EOF){
       printIOExplanationError(errno);
       return -1;
@@ -104,16 +99,19 @@ int main(int argc, char *argv[]){
 
       while(currentNode->n != prefixLength){
         if(currentNode->n > prefixLength){
-          if(currentNode->left == NULL) crearNodo(raiz,prefixLength);
+          //printf("mayor");
+          if(currentNode->left == NULL) crearNodo(raiz,prefixLength,raiz->n/2);
           currentNode = currentNode->left;
         }
         else{
-          if(currentNode->right == NULL) crearNodo(raiz,prefixLength);
+          //printf("menor");
+          if(currentNode->right == NULL) crearNodo(raiz,prefixLength,raiz->n/2);
           currentNode = currentNode->right;
         }
       }
       currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
-      currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
+      currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto
+      = (short)outInterface;
     }
     counter += 1;
   }while(errno != REACHED_EOF);
