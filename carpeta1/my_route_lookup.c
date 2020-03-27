@@ -74,7 +74,10 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
       else{
         nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
         nodo_aux->n = n_aux+param_nivel;
+
+        if(nodo_aux->n == 31) nodo_aux->n = 32;
         nodo_aux->tabla = (entrada*)calloc(2,sizeof(entrada ));
+
         nodo_aux->size_tabla = 2;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
