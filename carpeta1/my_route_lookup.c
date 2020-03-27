@@ -52,7 +52,6 @@ entrada *redimensiona(entrada *tabla_in,int size_tabla){// Puede que debamos añ
       return nueva_tabla;
     }
 }
-=======
 nodo *crearNodo(nodo *raiz, char n, char param_nivel){
   char n_aux = raiz->n;
   if(n_aux == n) return NULL;
@@ -62,7 +61,7 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
       else{
         nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
         nodo_aux->n = n_aux-param_nivel;
-        nodo_aux->tabla = (prefijo*)calloc(2,sizeof(prefijo));
+        nodo_aux->tabla = (entrada*)calloc(2,sizeof(entrada));
         nodo_aux->size_tabla = 2;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
@@ -75,7 +74,7 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
       else{
         nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
         nodo_aux->n = n_aux+param_nivel;
-        nodo_aux->tabla = (prefijo*)calloc(2,sizeof(prefijo));
+        nodo_aux->tabla = (entrada*)calloc(2,sizeof(entrada ));
         nodo_aux->size_tabla = 2;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
@@ -110,7 +109,7 @@ int main(int argc, char *argv[]){
 
   nodo *raiz = (nodo*)calloc(1,sizeof(nodo));
   raiz->n = 16;
-  raiz->tabla = (prefijo*)calloc(2,sizeof(prefijo));
+  raiz->tabla = (entrada*)calloc(2,sizeof(entrada));
   raiz->size_tabla = 2;
   raiz->left = NULL;
   raiz->right = NULL;
@@ -146,11 +145,25 @@ int main(int argc, char *argv[]){
           currentNode = currentNode->right;
         }
       }
-      currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
-      currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto
-      = (short)outInterface;
-    }
-    counter += 1;
-  }while(errno != REACHED_EOF);
+
+      while (currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag == 1 || currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
+        if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo == prefix){// no debe hacer redimensiona
+          break;
+        }else{
+        currentNode->tabla = redimensiona(currentNode->tabla,currentNode->size_tabla);
+        }
+      }
+      if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
+
+      }else{
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
+        }
+      }
+       counter += 1;
+     }while(errno != REACHED_EOF);
 
 }
