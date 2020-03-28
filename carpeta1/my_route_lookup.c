@@ -53,6 +53,19 @@ entrada *redimensiona(entrada *tabla_in,int *tam_tabla){// Puede que debamos añ
       return nueva_tabla;
     }
 }
+void addMarker(uint32_t prefix,int prefixLength, nodo *currentNode,nodo *parentNode){
+  int netmask;
+  getNetmask(prefixLength, &netmask);
+  uint32_t marker_to_add = prefix & netmask;
+  if(parentNode != NULL){
+    if(parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].prefijo == marker_to_add && parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].marker_flag == 1){
+      // Ya está el marker, no hace falta añadirlo
+    }else{
+      parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].prefijo = marker_to_add;
+      parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].marker_flag = 1;
+    }
+  }
+}
 nodo *crearNodo(nodo *raiz, char n, char param_nivel){
   char n_aux = raiz->n;
   if(n_aux == n) return NULL;
@@ -106,12 +119,12 @@ int main(int argc, char *argv[]){
   }
 
   int errno = 0;
-  uint32_t prefix;
-  int prefixLength;
-  int outInterface;
+  uint32_t prefix = 0;
+  int prefixLength = 0;
+  int outInterface = 0;
 
-  nodo *currentNode;
-
+  nodo *currentNode = NULL;
+  nodo* parentNode = NULL;
   int counter = 0;
 
   nodo *raiz = (nodo*)calloc(1,sizeof(nodo));
@@ -144,11 +157,13 @@ int main(int argc, char *argv[]){
         if(currentNode->n > prefixLength){
           //printf("mayor");
           if(currentNode->left == NULL) crearNodo(raiz,prefixLength,raiz->n/2);
+          parentNode = currentNode;
           currentNode = currentNode->left;
         }
         else{
           //printf("menor");
           if(currentNode->right == NULL) crearNodo(raiz,prefixLength,raiz->n/2);
+          parentNode = currentNode;
           currentNode = currentNode->right;
         }
       }
@@ -171,16 +186,22 @@ int main(int argc, char *argv[]){
       }
       if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
+        addMarker(prefix,prefixLength,currentNode,parentNode);
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
 
       }else{
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
+        addMarker(prefix,prefixLength,currentNode,parentNode);
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
         }
       }
        counter += 1;
      }while(errno != REACHED_EOF);
+     // int i;
+     // for(i = 0; i < raiz->size_tabla;i++){
+     //   if(raiz->tabla[i].marker_flag == 1)printf("%s\n", "¡Hay un marker!");
+     // }
      printMemoryTimeUsage();
      free_tree(raiz);
      freeIO();
