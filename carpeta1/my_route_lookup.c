@@ -1,6 +1,6 @@
 #include "io.h"
 #include "utils.h"
-#define COEFICIENTE 9
+#define COEFICIENTE 1
 
 typedef struct
 {
