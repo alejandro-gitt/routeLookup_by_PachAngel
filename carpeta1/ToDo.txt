@@ -1,6 +1,6 @@
 -Función crearNodo (ÁNGEL, por añadir /31?)
 -Función redimensionar (PACHECO, HECHO)
 -Función free_tree (ÁNGEL, HECHO)
--Algoritmo de rellenado del árbol (HECHO)
+-Algoritmo de rellenado del árbol (HECHO, ¿antiguos inquilinos pueden querer el mismo sitio?)
 -Algoritmo de búsqueda del next-hop ()
 -Añadir algoritmo intermedio de markers ()
