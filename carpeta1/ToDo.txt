@@ -1,4 +1,4 @@
--Función crearNodo (ÁNGEL, A espera del profe)
+-Función crearNodo (ÁNGEL, por añadir /31?)
 -Función redimensionar (PACHECO, HECHO)
 -Función free_tree (ÁNGEL, HECHO)
 -Algoritmo de rellenado del árbol (HECHO)
