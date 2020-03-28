@@ -1,21 +1,58 @@
 #include "io.h"
 #include "utils.h"
+#define COEFICIENTE 1
 
-typedef struct prefijo{
+typedef struct
+{
   char marker_flag;
   char prefix_flag;
   uint32_t prefijo;
   short siguiente_salto;
-}prefijo;
+}entrada;
 
 typedef struct nodo{
   char n;
-  prefijo *tabla;
+
+  entrada *tabla;
   int size_tabla;
   struct nodo *left;
   struct nodo *right;
 }nodo;
 
+/*
+método que recibe una tabla con una memoria insuficiente, se le adjudica más memoria,
+de momento una cantidad fija (mediante realloc)
+entradas:
+  - Puntero a la tabla
+  - Puntero a tabla nueva
+salidas:z
+  - nuevo puntero con mayor espacio reservado (COEFICIENTE*tamaño_anterior)
+*/
+
+entrada *redimensiona(entrada *tabla_in,int *tam_tabla){// Puede que debamos añadir una segunda entrada con el nuevo tamaño, de momento es un valor fijo(COEFICIENTE)
+    int size_tabla=*tam_tabla;
+    entrada *nueva_tabla = calloc(COEFICIENTE+size_tabla,sizeof(entrada));
+
+    if(nueva_tabla == NULL){
+      printf("%s\n","Asignación fallida");
+      return 0;
+    }else{
+      //Asignación conseguida
+      printf("%s\n", "Asignación realizada");
+      /*Recorremos toda la tabla antigua, extrayendo los prefijos y añadiendolos en la nueva*/
+      int i;
+      for (i = 0; i < size_tabla; i++){
+        if(tabla_in[i].marker_flag == 0 && tabla_in[i].prefix_flag == 0){
+          //es una posición vacía
+        }else{
+          nueva_tabla[hash(tabla_in[i].prefijo,COEFICIENTE+size_tabla)] = tabla_in[i];
+        }
+      }
+      free(tabla_in);
+      *tam_tabla = size_tabla+COEFICIENTE;
+      return nueva_tabla;
+    }
+}
 nodo *crearNodo(nodo *raiz, char n, char param_nivel){
   char n_aux = raiz->n;
   if(n_aux == n) return NULL;
@@ -25,7 +62,7 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
       else{
         nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
         nodo_aux->n = n_aux-param_nivel;
-        nodo_aux->tabla = (prefijo*)calloc(2,sizeof(prefijo));
+        nodo_aux->tabla = (entrada*)calloc(2,sizeof(entrada));
         nodo_aux->size_tabla = 2;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
@@ -38,7 +75,10 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
       else{
         nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
         nodo_aux->n = n_aux+param_nivel;
-        nodo_aux->tabla = (prefijo*)calloc(2,sizeof(prefijo));
+
+        if(nodo_aux->n == 31) nodo_aux->n = 32;
+        nodo_aux->tabla = (entrada*)calloc(2,sizeof(entrada ));
+
         nodo_aux->size_tabla = 2;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
@@ -60,7 +100,10 @@ void free_tree(nodo *raiz){
 
 int main(int argc, char *argv[]){
 
-  if(argc != 3) return -1;
+  if(argc != 3) {
+    printf("%s\n","not enough arguments");
+    return -1;
+  }
 
   int errno = 0;
   uint32_t prefix;
@@ -73,7 +116,7 @@ int main(int argc, char *argv[]){
 
   nodo *raiz = (nodo*)calloc(1,sizeof(nodo));
   raiz->n = 16;
-  raiz->tabla = (prefijo*)calloc(2,sizeof(prefijo));
+  raiz->tabla = (entrada*)calloc(2,sizeof(entrada));
   raiz->size_tabla = 2;
   raiz->left = NULL;
   raiz->right = NULL;
@@ -88,7 +131,7 @@ int main(int argc, char *argv[]){
   }
 
   do{
-    printf("%i\n",counter);
+    printf(" val del counter: %i\n",counter);
     errno = readFIBLine(&prefix, &prefixLength, &outInterface);
     currentNode = raiz;
     if(errno != OK && errno != REACHED_EOF){
@@ -109,11 +152,36 @@ int main(int argc, char *argv[]){
           currentNode = currentNode->right;
         }
       }
-      currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
-      currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto
-      = (short)outInterface;
-    }
-    counter += 1;
-  }while(errno != REACHED_EOF);
 
+      while (currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag == 1 || currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
+        //    printf("En el while de flags tratando el nodo %d\n",currentNode->n);
+        //printf("en el prefijo: %d\n",prefix);
+        //printf("tamaño OG: %d\n",currentNode->size_tabla);
+        //printf("Valor del hash: %d\n",hash(prefix,currentNode->size_tabla));
+
+        if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo == prefix){// no debe hacer redimensiona
+          break;
+        }else{
+
+        currentNode->tabla = redimensiona(currentNode->tabla,&currentNode->size_tabla);
+
+        //printf("nuevo tamaño= %d \n ",currentNode->size_tabla);
+        //printf("nuevo HASH= %d \n ",hash(prefix,currentNode->size_tabla));
+        }
+      }
+      if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
+
+      }else{
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
+        currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
+        }
+      }
+       counter += 1;
+     }while(errno != REACHED_EOF);
+     printMemoryTimeUsage();
+     free_tree(raiz);
+     freeIO();
 }
