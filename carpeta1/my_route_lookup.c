@@ -1,5 +1,6 @@
 #include "io.h"
 #include "utils.h"
+#include <time.h>
 #define COEFICIENTE 1
 
 typedef struct
@@ -29,7 +30,7 @@ salidas:z
   - nuevo puntero con mayor espacio reservado (COEFICIENTE*tamaño_anterior)
 */
 
-entrada *redimensiona(entrada *tabla_in,int *tam_tabla){// Puede que debamos añadir una segunda entrada con el nuevo tamaño, de momento es un valor fijo(COEFICIENTE)
+entrada *redimensiona(entrada *tabla_in,int *tam_tabla){
     int size_tabla=*tam_tabla;
     entrada *nueva_tabla = calloc(COEFICIENTE+size_tabla,sizeof(entrada));
 
