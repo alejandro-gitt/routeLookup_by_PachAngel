@@ -1,6 +1,7 @@
 #include "io.h"
 #include "utils.h"
 #include <time.h>
+#define TAMANO_INICIAL 16777216
 #define COEFICIENTE 1
 
 
@@ -47,6 +48,7 @@ entrada *redimensiona(entrada *tabla_in,int *tam_tabla){
         if(tabla_in[i].marker_flag == 0 && tabla_in[i].prefix_flag == 0){
           //es una posición vacía
         }else{
+          if(nueva_tabla[hash(tabla_in[i].prefijo,COEFICIENTE+size_tabla)].prefijo != 0) printf("%s\n", "MECAGOENLAPUTILLA");
           nueva_tabla[hash(tabla_in[i].prefijo,COEFICIENTE+size_tabla)] = tabla_in[i];
         }
       }
@@ -55,6 +57,17 @@ entrada *redimensiona(entrada *tabla_in,int *tam_tabla){
       return nueva_tabla;
     }
 }
+
+void imprimirPost(struct nodo *reco)
+{
+    if (reco != NULL)
+    {
+        imprimirPost(reco->left);
+        imprimirPost(reco->right);
+        printf("%u-",reco->n);
+    }
+}
+
 
 nodo *crearNodo(nodo *raiz, char n, char param_nivel){
   char n_aux = raiz->n;
@@ -65,8 +78,8 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
       else{
         nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
         nodo_aux->n = n_aux-param_nivel;
-        nodo_aux->tabla = (entrada*)calloc(2,sizeof(entrada));
-        nodo_aux->size_tabla = 2;
+        nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
+        nodo_aux->size_tabla = TAMANO_INICIAL;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
         raiz->left = nodo_aux;
@@ -80,9 +93,9 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
         nodo_aux->n = n_aux+param_nivel;
 
         if(nodo_aux->n == 31) nodo_aux->n = 32;
-        nodo_aux->tabla = (entrada*)calloc(2,sizeof(entrada ));
+        nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada ));
 
-        nodo_aux->size_tabla = 2;
+        nodo_aux->size_tabla = TAMANO_INICIAL;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
         raiz->right = nodo_aux;
@@ -136,7 +149,7 @@ void addMarker(uint32_t prefix,int prefixLength, short outInterface,nodo *parent
         parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].siguiente_salto = calc_next_hop(parentNode->left, prefix, numberOfTableAccesses);
         //parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].siguiente_salto = 19;
       }else{
-        parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].siguiente_salto = 3365;
+        parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].siguiente_salto = 0;
       }
     }else{
       printf("%s\n", "LA POS TIENE OTRA COSA");
@@ -175,8 +188,8 @@ int main(int argc, char *argv[]){
 
   nodo *raiz = (nodo*)calloc(1,sizeof(nodo));
   raiz->n = 16;
-  raiz->tabla = (entrada*)calloc(2,sizeof(entrada));
-  raiz->size_tabla = 2;
+  raiz->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
+  raiz->size_tabla = TAMANO_INICIAL;
   raiz->left = NULL;
   raiz->right = NULL;
 
@@ -215,38 +228,38 @@ int main(int argc, char *argv[]){
         }
       }
 
-      while (currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag == 1 || currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
+      while (currentNode->tabla[hash(prefix >> 32-prefixLength,currentNode->size_tabla)].prefix_flag == 1 || currentNode->tabla[hash(prefix >> 32-prefixLength,currentNode->size_tabla)].marker_flag == 1){
         //printf("En el while de flags tratando el nodo %d\n",currentNode->n);
         //printf("en el prefijo: %d\n",prefix);
         //printf("tamaño OG: %d\n",currentNode->size_tabla);
         //printf("Valor del hash: %d\n",hash(prefix,currentNode->size_tabla));
 
-        if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo == prefix){// no debe hacer redimensiona
+        if(currentNode->tabla[hash(prefix >> 32-prefixLength,currentNode->size_tabla)].prefijo == prefix){// no debe hacer redimensiona
           break;
         }else{
-
+        printf("%u xdxdxdxd\n", currentNode->size_tabla);
         currentNode->tabla = redimensiona(currentNode->tabla,&currentNode->size_tabla);
 
         //printf("nuevo tamaño= %d \n ",currentNode->size_tabla);
         //printf("nuevo HASH= %d \n ",hash(prefix,currentNode->size_tabla));
         }
       }
-      if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
-        currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
+      if(currentNode->tabla[hash(prefix >> 32-prefixLength,currentNode->size_tabla)].marker_flag == 1){
+        currentNode->tabla[hash(prefix >> 32-prefixLength,currentNode->size_tabla)].prefix_flag = 1;
         if(currentNode == parentNode->right){
-          addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
+          //addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
         }
-        currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
-        printf("%u\n", outInterface);
+        currentNode->tabla[hash(prefix >> 32-prefixLength,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
+        //printf("%u\n", outInterface);
 
       }else{
-        currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
-        currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
+        currentNode->tabla[hash(prefix >> 32-prefixLength,currentNode->size_tabla)].prefijo = prefix;
+        currentNode->tabla[hash(prefix >> 32-prefixLength,currentNode->size_tabla)].prefix_flag = 1;
         if(currentNode == parentNode->right){
-          addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
+          //addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
         }
-        currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
-        printf("%u\n", outInterface);
+        currentNode->tabla[hash(prefix >> 32-prefixLength,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
+        //printf("%u\n", outInterface);
         }
       }
        counter += 1;
@@ -282,6 +295,7 @@ int main(int argc, char *argv[]){
      // for(i=0;i<raiz->size_tabla;i++){
      //   printf("%u\n",raiz->tabla[i].prefijo);
      // }
+     imprimirPost(raiz);
      free_tree(raiz);
      freeIO();
 }
