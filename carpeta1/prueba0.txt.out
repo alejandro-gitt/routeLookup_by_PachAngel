@@ -1,3 +1,14 @@
-Memory (Kbytes) = 2920
-CPU Time (secs)= 0.145855
+80.1.3.4;MISS;0;359
+129.3.4.4;MISS;0;182
+212.1.2.4;MISS;0;145
+212.1.2.4;MISS;0;64
+
+Packets processed= 4
+Average table accesses= 0.00
+Average packet processing time (nsecs)= 187.50
+Memory (Kbytes) = 958464
+CPU Time (secs)= 0.062458
+
+Memory (Kbytes) = 958464
+CPU Time (secs)= 0.062464
 
