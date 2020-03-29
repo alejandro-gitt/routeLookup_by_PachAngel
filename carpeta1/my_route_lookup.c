@@ -53,19 +53,7 @@ entrada *redimensiona(entrada *tabla_in,int *tam_tabla){// Puede que debamos añ
       return nueva_tabla;
     }
 }
-void addMarker(uint32_t prefix,int prefixLength, nodo *currentNode,nodo *parentNode){
-  int netmask;
-  getNetmask(prefixLength, &netmask);
-  uint32_t marker_to_add = prefix & netmask;
-  if(parentNode != NULL){
-    if(parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].prefijo == marker_to_add && parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].marker_flag == 1){
-      // Ya está el marker, no hace falta añadirlo
-    }else{
-      parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].prefijo = marker_to_add;
-      parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].marker_flag = 1;
-    }
-  }
-}
+
 nodo *crearNodo(nodo *raiz, char n, char param_nivel){
   char n_aux = raiz->n;
   if(n_aux == n) return NULL;
@@ -121,6 +109,29 @@ short calc_next_hop(nodo *raiz, uint32_t dir, int *numberOfTableAccesses){
   return next_hop;
 }
 
+void addMarker(uint32_t prefix,int prefixLength, short outInterface,nodo *parentNode,int *numberOfTableAccesses){
+  int netmask;
+  getNetmask(prefixLength, &netmask);
+  uint32_t marker_to_add = prefix & netmask;
+  if(parentNode != NULL){
+    if(parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].prefijo == marker_to_add){
+      if(parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].marker_flag == 1){
+        // Ya está el marker, no hace falta añadirlo
+      }else{
+        parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].marker_flag = 1;
+      }
+      //
+    }else if(parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].prefijo == 0){
+      parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].prefijo = marker_to_add;
+      parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].marker_flag = 1;
+      parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].siguiente_salto = calc_next_hop(parentNode->left, prefix, numberOfTableAccesses);
+    }else{
+      parentNode->tabla = redimensiona(parentNode->tabla,&parentNode->size_tabla);
+      addMarker(prefix, prefixLength, outInterface, parentNode, numberOfTableAccesses);
+    }
+  }
+}
+
 void free_tree(nodo *raiz){
   if(raiz->left != NULL) free_tree(raiz->left);
   if(raiz->right != NULL) free_tree(raiz->right);
@@ -140,6 +151,7 @@ int main(int argc, char *argv[]){
   uint32_t prefix = 0;
   int prefixLength = 0;
   int outInterface = 0;
+  int numberOfTableAccesses = 0;
 
   nodo *currentNode = NULL;
   nodo* parentNode = NULL;
@@ -204,13 +216,13 @@ int main(int argc, char *argv[]){
       }
       if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
-        addMarker(prefix,prefixLength,currentNode,parentNode);
+        addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
 
       }else{
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
-        addMarker(prefix,prefixLength,currentNode,parentNode);
+        addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
         }
       }
@@ -225,7 +237,7 @@ int main(int argc, char *argv[]){
      struct timespec finalTime;
      double searchingTime = 0;
      double  TotalTime = 0;
-     int numberOfTableAccesses = 0;
+     numberOfTableAccesses = 0;
      int totalTableAccesses = 0;
      counter = 0;
      do{
@@ -243,6 +255,11 @@ int main(int argc, char *argv[]){
 
      printSummary(counter, totalTableAccesses/counter, TotalTime/counter);
      printMemoryTimeUsage();
+     printf("--------------------------\n\n");
+     int i = 0;
+     for(i=0;i<raiz->size_tabla;i++){
+       printf("%d\n",raiz->tabla[i].siguiente_salto);
+     }
      free_tree(raiz);
      freeIO();
 }
