@@ -1,5 +1,6 @@
 #include "io.h"
 #include "utils.h"
+#include <time.h>
 #define COEFICIENTE 1
 
 typedef struct
@@ -29,7 +30,7 @@ salidas:z
   - nuevo puntero con mayor espacio reservado (COEFICIENTE*tamaño_anterior)
 */
 
-entrada *redimensiona(entrada *tabla_in,int *tam_tabla){// Puede que debamos añadir una segunda entrada con el nuevo tamaño, de momento es un valor fijo(COEFICIENTE)
+entrada *redimensiona(entrada *tabla_in,int *tam_tabla){
     int size_tabla=*tam_tabla;
     entrada *nueva_tabla = calloc(COEFICIENTE+size_tabla,sizeof(entrada));
 
@@ -94,17 +95,21 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
 short calc_next_hop(nodo *raiz, uint32_t dir, int *numberOfTableAccesses){
   int netmask = 0;
   getNetmask(raiz->n,&netmask);
+
   uint32_t prefix = dir & netmask;
   short next_hop = 0;
   nodo *currentNode = raiz;
-  while (currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag == 1 ||
-  currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
+  while (currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo != 0){
 
     next_hop = currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto;
     currentNode = currentNode->right;
-    getNetmask(currentNode->n,&netmask);
+    if(currentNode != NULL){
+      getNetmask(currentNode->n,&netmask);
+    }else{
+      break;
+    }
     prefix = dir & netmask;
-    numberOfTableAccesses += 1;
+    *numberOfTableAccesses += 1;
   }
   return next_hop;
 }
@@ -124,7 +129,9 @@ void addMarker(uint32_t prefix,int prefixLength, short outInterface,nodo *parent
     }else if(parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].prefijo == 0){
       parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].prefijo = marker_to_add;
       parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].marker_flag = 1;
+      if(parentNode->left !=NULL){
       parentNode->tabla[hash(marker_to_add,parentNode->size_tabla)].siguiente_salto = calc_next_hop(parentNode->left, prefix, numberOfTableAccesses);
+    }
     }else{
       parentNode->tabla = redimensiona(parentNode->tabla,&parentNode->size_tabla);
       addMarker(prefix, prefixLength, outInterface, parentNode, numberOfTableAccesses);
@@ -149,6 +156,8 @@ int main(int argc, char *argv[]){
 
   int errno = 0;
   uint32_t prefix = 0;
+  uint32_t dir = 0;
+  int netmask = 0;
   int prefixLength = 0;
   int outInterface = 0;
   int numberOfTableAccesses = 0;
@@ -166,7 +175,6 @@ int main(int argc, char *argv[]){
 
   currentNode = raiz;
 
-
   errno = initializeIO(argv[1],argv[2]);
   if(errno != OK){
     printIOExplanationError(errno);
@@ -175,7 +183,9 @@ int main(int argc, char *argv[]){
 
   do{
     printf(" val del counter: %i\n",counter);
-    errno = readFIBLine(&prefix, &prefixLength, &outInterface);
+    errno = readFIBLine(&dir, &prefixLength, &outInterface);
+    getNetmask(prefixLength,&netmask);
+    prefix = dir & netmask;
     currentNode = raiz;
     if(errno != OK && errno != REACHED_EOF){
       printIOExplanationError(errno);
@@ -199,7 +209,7 @@ int main(int argc, char *argv[]){
       }
 
       while (currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag == 1 || currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
-        //    printf("En el while de flags tratando el nodo %d\n",currentNode->n);
+        //printf("En el while de flags tratando el nodo %d\n",currentNode->n);
         //printf("en el prefijo: %d\n",prefix);
         //printf("tamaño OG: %d\n",currentNode->size_tabla);
         //printf("Valor del hash: %d\n",hash(prefix,currentNode->size_tabla));
@@ -216,13 +226,17 @@ int main(int argc, char *argv[]){
       }
       if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].marker_flag == 1){
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
-        addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
+        if(currentNode == parentNode->right){
+          addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
+        }
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
 
       }else{
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo = prefix;
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag = 1;
-        addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
+        if(currentNode == parentNode->right){
+          addMarker(prefix,prefixLength,outInterface,parentNode,&numberOfTableAccesses);
+        }
         currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto = (short)outInterface;
         }
       }
@@ -231,7 +245,7 @@ int main(int argc, char *argv[]){
      errno = 0;
 
      //printf("%d\n",calc_next_hop(raiz,3512205399));
-     uint32_t dir = 0;
+    dir = 0;
      short siguiente_salto = 0;
      struct timespec initialTime;
      struct timespec finalTime;
@@ -258,7 +272,7 @@ int main(int argc, char *argv[]){
      printf("--------------------------\n\n");
      int i = 0;
      for(i=0;i<raiz->size_tabla;i++){
-       printf("%d\n",raiz->tabla[i].siguiente_salto);
+       printf("%u\n",raiz->right->tabla[i].prefijo);
      }
      free_tree(raiz);
      freeIO();
