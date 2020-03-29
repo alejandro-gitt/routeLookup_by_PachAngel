@@ -99,23 +99,22 @@ short calc_next_hop(nodo *raiz, uint32_t dir, int *numberOfTableAccesses){
   uint32_t prefix = dir & netmask;
   short next_hop = 0;
   nodo *currentNode = raiz;
-  while (currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo == prefix){
-    if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag == 1){
+  do{
+    //printf("El prefijo de la tabla: %u\n",currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo);
+    //printf("El prefijo de nosotros: %u\n",prefix);
+    if(currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefijo == prefix){
       next_hop = currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto;
-      *numberOfTableAccesses += 1;
-      return next_hop;
-    }else{
-      next_hop = currentNode->tabla[hash(prefix,currentNode->size_tabla)].siguiente_salto;
+      *numberOfTableAccesses +=1;
       currentNode = currentNode->right;
-      if(currentNode != NULL) getNetmask(currentNode->n,&netmask);
-      else break;
-      prefix = dir & netmask;
-      *numberOfTableAccesses += 1;
+      //printf("%s\n", "nanananananiino");
+    }else{
+      *numberOfTableAccesses +=1;
+      currentNode = currentNode->left;
+      //printf("%s\n", "nanananananiino");
     }
-  }
+  }while(currentNode != NULL);
   return next_hop;
 }
-
 void addMarker(uint32_t prefix,int prefixLength, short outInterface,nodo *parentNode,int *numberOfTableAccesses){
   uint32_t marker_to_add = prefix;
   if(parentNode != NULL){
@@ -279,10 +278,10 @@ int main(int argc, char *argv[]){
      printSummary(counter, (float)totalTableAccesses/counter, TotalTime/counter);
      printMemoryTimeUsage();
      printf("--------------------------\n\n");
-     int i = 0;
-     for(i=0;i<raiz->size_tabla;i++){
-       printf("%u\n",raiz->tabla[i].prefijo);
-     }
+     // int i = 0;
+     // for(i=0;i<raiz->size_tabla;i++){
+     //   printf("%u\n",raiz->tabla[i].prefijo);
+     // }
      free_tree(raiz);
      freeIO();
 }
