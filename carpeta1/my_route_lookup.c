@@ -104,8 +104,8 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
   *numberOfTableAccesses += 1;
   while (currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)].prefix_flag != 0 || currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)].marker_flag != 0){
     currentItem = &currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)];
-    //printf("Prefijo calculado a partir de netmask: %u\n",prefix);
-    //printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
+    printf("Prefijo calculado a partir de netmask: %u\n",prefix);
+    printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
     if(currentItem->prefix_flag != 0 || currentItem->marker_flag != 0){
       while(currentItem->prefijo != prefix){
         if(currentItem->next != NULL){
@@ -118,18 +118,15 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
     if(currentItem->prefijo == prefix){
       printf("%s\n", "Existe match");
       next_hop = currentItem->siguiente_salto;
-      if(currentItem->marker_flag == 1){
-      currentNode = currentNode->right;
-    }else break;
-      if(currentNode != NULL){
-        getNetmask(currentNode->n,&netmask);
-      }else break;
+      if(currentItem->marker_flag == 1) currentNode = currentNode->right;
+      else break;
+    }else currentNode = currentNode->left;
+    if(currentNode != NULL){
+      getNetmask(currentNode->n,&netmask);
     }else break;
     prefix = dir & netmask;
     *numberOfTableAccesses += 1;
-    if(currentNode->left != NULL) currentNode = currentNode->left;
-    else break;
-  }//
+  }//end of while grande
   return next_hop;
 }
 
