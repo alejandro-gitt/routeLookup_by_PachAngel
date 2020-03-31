@@ -1,6 +1,7 @@
-include "io.h"
+#include "io.h"
 #include "utils.h"
 #include <time.h>
+#include <stdio.h>
 #define COEFICIENTE 1
 #define TAMANO_INICIAL 1049
 
@@ -21,7 +22,6 @@ typedef struct nodo{
   struct nodo *left;
   struct nodo *right;
 }nodo;
-
 /*
 método que recibe una tabla con una memoria insuficiente, se le adjudica más memoria,
 de momento una cantidad fija (mediante realloc)
@@ -102,7 +102,7 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
   nodo *currentNode = raiz;
   entrada *currentItem = NULL;
   *numberOfTableAccesses += 1;
-  while (currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)].prefix_flag != 0 || currentNode->tabla[hash(prefix,currentNode->size_tabla)].prefix_flag != 0){
+  while (currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)].prefix_flag != 0 || currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)].marker_flag != 0){
     currentItem = &currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)];
     //printf("Prefijo calculado a partir de netmask: %u\n",prefix);
     //printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
@@ -118,7 +118,9 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
     if(currentItem->prefijo == prefix){
       printf("%s\n", "Existe match");
       next_hop = currentItem->siguiente_salto;
+      if(currentItem->marker_flag == 1){
       currentNode = currentNode->right;
+    }else break;
       if(currentNode != NULL){
         getNetmask(currentNode->n,&netmask);
       }else break;
@@ -127,7 +129,7 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
     *numberOfTableAccesses += 1;
     if(currentNode->left != NULL) currentNode = currentNode->left;
     else break;
-  }
+  }//
   return next_hop;
 }
 
@@ -276,7 +278,7 @@ int main(int argc, char *argv[]){
   printSummary(counter, totalTableAccesses/counter, TotalTime/counter);
   printMemoryTimeUsage();
   printf("--------------------------\n\n");
-  int i = 0;
+  //int i = 0;
   // for(i=0;i<raiz->size_tabla;i++){
   //  printf("%u\n",raiz->tabla[i].siguiente_salto);
   // }
