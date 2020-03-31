@@ -19,9 +19,14 @@ typedef struct nodo{
 
   entrada *tabla;
   int size_tabla;
+  struct nodo *parentNode;
   struct nodo *left;
   struct nodo *right;
+  struct nodo *nextToMark;
 }nodo;
+// nuevo tipo de nodo dummy??
+
+
 /*
 método que recibe una tabla con una memoria insuficiente, se le adjudica más memoria,
 de momento una cantidad fija (mediante realloc)
@@ -130,10 +135,13 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
   return next_hop;
 }
 
-void addMarker(uint32_t prefix,int prefixLength, short defaultInterface, nodo *parentNode,int *numberOfTableAccesses){
+void addMarker(uint32_t prefix,int prefixLength, short defaultInterface, nodo *firstInList,int *numberOfTableAccesses){
   entrada *currentItem = NULL;
-  if(parentNode != NULL){
-    currentItem = &parentNode->tabla[hash(prefix >> (32-parentNode->n),parentNode->size_tabla)];
+  //if(parentNode != NULL){
+  nodo *currentNode = firstInList;
+
+  while(currentNode != NULL){//recorre la lista de nodos en los que hay que añadir markers
+  currentItem = &currentNode->tabla[hash(prefix >> (32-currentNode->parentNode->n),currentNode->parentNode->size_tabla)];
     if(currentItem->prefix_flag != 0 || currentItem->marker_flag != 0){
       while(currentItem->prefijo != prefix){
         if(currentItem->next != NULL) currentItem = currentItem->next;
@@ -147,10 +155,13 @@ void addMarker(uint32_t prefix,int prefixLength, short defaultInterface, nodo *p
     currentItem->prefijo = prefix;
     currentItem->marker_flag = 1;
     if(currentItem->siguiente_salto == 0){
-      if(parentNode->left != NULL)
-        currentItem->siguiente_salto = calc_next_hop(parentNode->left, prefix, defaultInterface, numberOfTableAccesses);
+      if(currentNode->parentNode->left != NULL)
+        currentItem->siguiente_salto = calc_next_hop(currentNode->parentNode->left, prefix, defaultInterface, numberOfTableAccesses);
     }
+    currentNode = currentNode->nextToMark;
   }
+  //free de la linked list
+  //}
 }
 
 void free_tree(nodo *raiz){
@@ -178,7 +189,8 @@ int main(int argc, char *argv[]){
   int numberOfTableAccesses = 0;
 
   nodo *currentNode = NULL;
-  nodo* parentNode = NULL;
+  nodo* headNode = NULL;
+  nodo* tailNode = NULL;
   entrada *currentItem = NULL;
   int counter = 0;
 
@@ -188,6 +200,7 @@ int main(int argc, char *argv[]){
   raiz->size_tabla = TAMANO_INICIAL;
   raiz->left = NULL;
   raiz->right = NULL;
+  raiz->nextToMark = NULL;
 
   currentNode = raiz;
 
@@ -217,13 +230,23 @@ int main(int argc, char *argv[]){
         if(currentNode->n > prefixLength){
           //printf("mayor");
           if(currentNode->left == NULL) crearNodo(raiz,prefixLength,raiz->n/2);
-          parentNode = currentNode;
+      //    parentNode = currentNode;
           currentNode = currentNode->left;
         }
         else{
           //printf("menor");
           if(currentNode->right == NULL) crearNodo(raiz,prefixLength,raiz->n/2);
-          parentNode = currentNode;
+          /*Añadiendo currentNode a la lista para añadir marker (mark_list)*/
+          if(headNode->nextToMark == NULL){//mark_list estaba vacía, añadimos el primer elemento
+            headNode->nextToMark = currentNode;
+            tailNode = currentNode;
+          }else{//mark_list no estaba vacía, añadimos al final:
+            currentNode->nextToMark = NULL;
+            tailNode->nextToMark = currentNode;
+            tailNode = currentNode;
+          }
+          /*Añadido a la lista*/
+          //parentNode = currentNode;
           currentNode = currentNode->right;
         }
       }
@@ -240,8 +263,8 @@ int main(int argc, char *argv[]){
       }
       currentItem->prefijo = prefix;
       currentItem->prefix_flag = 1;
-      if(currentNode == parentNode->right){
-        addMarker(prefix, prefixLength, defaultInterface, parentNode, &numberOfTableAccesses);
+      if(headNode->nextToMark == NULL){//ningún nodo al que añadir markers
+        addMarker(prefix, prefixLength, defaultInterface, headNode->nextToMark, &numberOfTableAccesses);
       }
       currentItem->siguiente_salto = (short)outInterface;
       counter += 1;
