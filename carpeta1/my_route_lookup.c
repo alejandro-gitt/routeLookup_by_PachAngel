@@ -75,6 +75,7 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
         nodo_aux->size_tabla = TAMANO_INICIAL;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
+        nodo_aux->nextToMark = NULL;
         raiz->left = nodo_aux;
         return nodo_aux;
       }
@@ -91,6 +92,7 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
         nodo_aux->size_tabla = TAMANO_INICIAL;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
+        nodo_aux->nextToMark = NULL;
         raiz->right = nodo_aux;
         return nodo_aux;
       }
@@ -109,8 +111,8 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
   *numberOfTableAccesses += 1;
   while (currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)].prefix_flag != 0 || currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)].marker_flag != 0){
     currentItem = &currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)];
-    printf("Prefijo calculado a partir de netmask: %u\n",prefix);
-    printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
+    //printf("Prefijo calculado a partir de netmask: %u\n",prefix);
+    //printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
     if(currentItem->prefix_flag != 0 || currentItem->marker_flag != 0){
       while(currentItem->prefijo != prefix){
         if(currentItem->next != NULL){
@@ -123,7 +125,10 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
     if(currentItem->prefijo == prefix){
       printf("%s\n", "Existe match");
       next_hop = currentItem->siguiente_salto;
-      if(currentItem->marker_flag == 1) currentNode = currentNode->right;
+      if(currentItem->marker_flag != 0){
+        currentNode = currentNode->right;
+        printf("%s\n", "Me voy a la derecha");
+      }
       else break;
     }else currentNode = currentNode->left;
     if(currentNode != NULL){
@@ -135,13 +140,18 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
   return next_hop;
 }
 
-void addMarker(uint32_t prefix,int prefixLength, short defaultInterface, nodo *firstInList,int *numberOfTableAccesses){
+void addMarker(uint32_t dir,int prefixLength, short defaultInterface, nodo *firstInList,int *numberOfTableAccesses){
   entrada *currentItem = NULL;
-  //if(parentNode != NULL){
   nodo *currentNode = firstInList;
+  int netmask;
+  uint32_t prefix;
+
+
 
   while(currentNode != NULL){//recorre la lista de nodos en los que hay que añadir markers
-  currentItem = &currentNode->tabla[hash(prefix >> (32-currentNode->parentNode->n),currentNode->parentNode->size_tabla)];
+    getNetmask(currentNode->n,&netmask);
+    prefix = dir & (uint32_t)netmask;
+    currentItem = &currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)];
     if(currentItem->prefix_flag != 0 || currentItem->marker_flag != 0){
       while(currentItem->prefijo != prefix){
         if(currentItem->next != NULL) currentItem = currentItem->next;
@@ -155,13 +165,12 @@ void addMarker(uint32_t prefix,int prefixLength, short defaultInterface, nodo *f
     currentItem->prefijo = prefix;
     currentItem->marker_flag = 1;
     if(currentItem->siguiente_salto == 0){
-      if(currentNode->parentNode->left != NULL)
-        currentItem->siguiente_salto = calc_next_hop(currentNode->parentNode->left, prefix, defaultInterface, numberOfTableAccesses);
+      if(currentNode->left != NULL)
+        currentItem->siguiente_salto = calc_next_hop(currentNode->left, prefix, defaultInterface, numberOfTableAccesses);
     }
     currentNode = currentNode->nextToMark;
   }
   //free de la linked list
-  //}
 }
 
 void free_tree(nodo *raiz){
@@ -237,9 +246,9 @@ int main(int argc, char *argv[]){
           //printf("menor");
           if(currentNode->right == NULL) crearNodo(raiz,prefixLength,raiz->n/2);
           /*Añadiendo currentNode a la lista para añadir marker (mark_list)*/
-          if(headNode->nextToMark == NULL){//mark_list estaba vacía, añadimos el primer elemento
-            headNode->nextToMark = currentNode;
-            tailNode = currentNode;
+          if(headNode == NULL){//mark_list estaba vacía, añadimos el primer elemento
+            headNode = currentNode;
+            tailNode = headNode;
           }else{//mark_list no estaba vacía, añadimos al final:
             currentNode->nextToMark = NULL;
             tailNode->nextToMark = currentNode;
@@ -263,8 +272,8 @@ int main(int argc, char *argv[]){
       }
       currentItem->prefijo = prefix;
       currentItem->prefix_flag = 1;
-      if(headNode->nextToMark == NULL){//ningún nodo al que añadir markers
-        addMarker(prefix, prefixLength, defaultInterface, headNode->nextToMark, &numberOfTableAccesses);
+      if(headNode == NULL){//ningún nodo al que añadir markers
+        addMarker(dir, prefixLength, defaultInterface, headNode, &numberOfTableAccesses);
       }
       currentItem->siguiente_salto = (short)outInterface;
       counter += 1;
