@@ -3,7 +3,7 @@
 #include <time.h>
 #include <stdio.h>
 #define COEFICIENTE 1
-#define TAMANO_INICIAL 1049
+#define TAMANO_INICIAL 3617
 
 typedef struct
 {
@@ -107,12 +107,14 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
   uint32_t prefix = dir & (uint32_t)netmask;
   short next_hop = defaultInterface;
   nodo *currentNode = raiz;
+  printf("En el nodo 16\n");
   entrada *currentItem = NULL;
   *numberOfTableAccesses += 1;
-  while (currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)].prefix_flag != 0 || currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)].marker_flag != 0){
+  while (currentNode != NULL){
+    printf("En el nodo %u\n",currentNode->n);
     currentItem = &currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)];
-    //printf("Prefijo calculado a partir de netmask: %u\n",prefix);
-    //printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
+    printf("Prefijo calculado a partir de netmask: %u\n",prefix);
+    printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
     if(currentItem->prefix_flag != 0 || currentItem->marker_flag != 0){
       while(currentItem->prefijo != prefix){
         if(currentItem->next != NULL){
@@ -130,10 +132,16 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
         printf("%s\n", "Me voy a la derecha");
       }
       else break;
-    }else currentNode = currentNode->left;
+    }else{
+      currentNode = currentNode->left;
+      printf("%s\n", "Me voy a la izquierda");
+    }
     if(currentNode != NULL){
       getNetmask(currentNode->n,&netmask);
-    }else break;
+    }else{
+      printf("%s\n", "NO hay nodo");
+      break;
+    }
     prefix = dir & netmask;
     *numberOfTableAccesses += 1;
   }//end of while grande
@@ -145,6 +153,7 @@ void addMarker(uint32_t dir,int prefixLength, short defaultInterface, nodo *firs
   nodo *currentNode = firstInList;
   int netmask;
   uint32_t prefix;
+  printf("%s\n", "no estoy loco");
 
 
 
@@ -170,7 +179,6 @@ void addMarker(uint32_t dir,int prefixLength, short defaultInterface, nodo *firs
     }
     currentNode = currentNode->nextToMark;
   }
-  //free de la linked list
 }
 
 void free_tree(nodo *raiz){
@@ -200,6 +208,7 @@ int main(int argc, char *argv[]){
   nodo *currentNode = NULL;
   nodo* headNode = NULL;
   nodo* tailNode = NULL;
+  nodo *currentLista = NULL;
   entrada *currentItem = NULL;
   int counter = 0;
 
@@ -259,6 +268,14 @@ int main(int argc, char *argv[]){
           currentNode = currentNode->right;
         }
       }
+      printf("Rellenando prefijo en nodo %u\n", currentNode->n);
+      currentLista = headNode; // importante borrar la lista en cada iteración (head = null)
+      printf("Lista: ");
+      while(currentLista != NULL){
+        printf("%u ", currentLista->n);
+        currentLista = currentLista->nextToMark;
+      }
+      printf("\n");
       currentItem = &currentNode->tabla[hash(prefix >> (32-prefixLength),currentNode->size_tabla)];
       if(currentItem->prefix_flag != 0 || currentItem->marker_flag != 0){
         while(currentItem->prefijo != prefix){
@@ -272,11 +289,14 @@ int main(int argc, char *argv[]){
       }
       currentItem->prefijo = prefix;
       currentItem->prefix_flag = 1;
-      if(headNode == NULL){//ningún nodo al que añadir markers
+      currentItem->siguiente_salto = (short)outInterface;
+      if(headNode != NULL){//hay que añadir markers
         addMarker(dir, prefixLength, defaultInterface, headNode, &numberOfTableAccesses);
       }
-      currentItem->siguiente_salto = (short)outInterface;
       counter += 1;
+      headNode = NULL;
+      currentLista = NULL;
+      tailNode = NULL;
     }
   }while(errno != REACHED_EOF);
   errno = 0;
@@ -295,6 +315,7 @@ int main(int argc, char *argv[]){
     errno = readInputPacketFileLine(&dir);
     clock_gettime(CLOCK_MONOTONIC_RAW, &initialTime);
     siguiente_salto = calc_next_hop(raiz,dir, defaultInterface, &numberOfTableAccesses);
+    printf("siguiente_salto = %u\n", siguiente_salto);
     clock_gettime(CLOCK_MONOTONIC_RAW, &finalTime);
     printOutputLine(dir, (int)siguiente_salto, &initialTime, &finalTime, &searchingTime, numberOfTableAccesses);
     TotalTime += searchingTime;
