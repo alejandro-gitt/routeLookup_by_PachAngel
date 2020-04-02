@@ -181,10 +181,10 @@ void addMarker(uint32_t dir,int prefixLength, short defaultInterface, nodo *firs
   }
 }
 
-void free_hash_list(entrada head){
+void free_hash_list(entrada *head){
   if(head != NULL){
     if(head->next != NULL){
-      free_list(head->next)
+      free_hash_list(head->next);
     }
     free(head);
   }
@@ -195,13 +195,23 @@ void free_tree(nodo *raiz){
   if(raiz->right != NULL) free_tree(raiz->right);
   int i = 0;
   if(raiz->tabla != NULL){
-    for(i=0;i<raiz->size_tabla,i++){
-      free_hash_list(raiz[i]->next)
+    for(i=0;i<raiz->size_tabla;i++){
+      free_hash_list(raiz->tabla[i].next);
     }
     free(raiz->tabla);
   }
   free(raiz);
   return;
+}
+
+void imprimirPost(nodo *raiz)
+{
+    if (raiz != NULL)
+    {
+        imprimirPost(raiz->left);
+        imprimirPost(raiz->right);
+        printf("%i-",raiz->n);
+    }
 }
 
 int main(int argc, char *argv[]){
@@ -347,6 +357,7 @@ int main(int argc, char *argv[]){
   // for(i=0;i<raiz->size_tabla;i++){
   //  printf("%u\n",raiz->tabla[i].siguiente_salto);
   // }
+  imprimirPost(raiz);
   free_tree(raiz);
   freeIO();
 }
