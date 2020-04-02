@@ -67,18 +67,20 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
   if(n_aux == n) return NULL;
   else{
     if(n < n_aux){
-      if(raiz->left != NULL) return crearNodo(raiz->left,n,param_nivel/2);
-      else{
-        nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
-        nodo_aux->n = n_aux-param_nivel;
-        nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
-        nodo_aux->size_tabla = TAMANO_INICIAL;
-        nodo_aux->left = NULL;
-        nodo_aux->right = NULL;
-        nodo_aux->nextToMark = NULL;
-        raiz->left = nodo_aux;
-        return nodo_aux;
-      }
+        if(raiz->left != NULL) return crearNodo(raiz->left,n,param_nivel/2);
+        else{
+            nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
+            nodo_aux->n = n_aux-param_nivel;
+            printf("%s= %d\n","nodo a punto de crear",nodo_aux->n );
+
+            nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
+            nodo_aux->size_tabla = TAMANO_INICIAL;
+            nodo_aux->left = NULL;
+            nodo_aux->right = NULL;
+            nodo_aux->nextToMark = NULL;
+            raiz->left = nodo_aux;
+            return nodo_aux;
+        }
     }
     else{
       if(raiz->right != NULL) return crearNodo(raiz->right,n,param_nivel/2);
@@ -102,19 +104,20 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
 }
 
 short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numberOfTableAccesses){
+  printf("%s====%u\n","defaultencalc",defaultInterface );
   int netmask = 0;
   getNetmask(raiz->n,&netmask);
   uint32_t prefix = dir & (uint32_t)netmask;
   short next_hop = defaultInterface;
   nodo *currentNode = raiz;
-  printf("En el nodo 16\n");
+  //printf("En el nodo 16\n");
   entrada *currentItem = NULL;
   *numberOfTableAccesses += 1;
   while (currentNode != NULL){
-    printf("En el nodo %u\n",currentNode->n);
+  //  printf("En el nodo %u\n",currentNode->n);
     currentItem = &currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)];
-    printf("Prefijo calculado a partir de netmask: %u\n",prefix);
-    printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
+    // printf("Prefijo calculado a partir de netmask: %u\n",prefix);
+    // printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
     if(currentItem->prefix_flag != 0 || currentItem->marker_flag != 0){
       while(currentItem->prefijo != prefix){
         if(currentItem->next != NULL){
@@ -124,22 +127,22 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
         }else break;
       }
     }
-    if(currentItem->prefijo == prefix){
-      printf("%s\n", "Existe match");
+    if(currentItem->prefijo == prefix && (currentItem->marker_flag != 0 || currentItem->prefix_flag != 0)){
+    //  printf("%s\n", "Existe match");
       next_hop = currentItem->siguiente_salto;
       if(currentItem->marker_flag != 0){
         currentNode = currentNode->right;
-        printf("%s\n", "Me voy a la derecha");
+      //  printf("%s\n", "Me voy a la derecha");
       }
       else break;
     }else{
       currentNode = currentNode->left;
-      printf("%s\n", "Me voy a la izquierda");
+    //  printf("%s\n", "Me voy a la izquierda");
     }
     if(currentNode != NULL){
       getNetmask(currentNode->n,&netmask);
     }else{
-      printf("%s\n", "NO hay nodo");
+    //  printf("%s\n", "NO hay nodo");
       break;
     }
     prefix = dir & netmask;
@@ -153,7 +156,7 @@ void addMarker(uint32_t dir,int prefixLength, short defaultInterface, nodo *firs
   nodo *currentNode = firstInList;
   int netmask;
   uint32_t prefix;
-  printf("%s\n", "no estoy loco");
+  //printf("%s\n", "no estoy loco");
 
 
 
@@ -256,8 +259,9 @@ int main(int argc, char *argv[]){
   do{
     //printf(" val del counter: %i\n",counter);
     errno = readFIBLine(&dir, &prefixLength, &outInterface);
-    if(dir == 0){
+    if(prefixLength == 0){
       defaultInterface = outInterface;
+      printf("%s= %u\n","default interface",defaultInterface );
       continue;
     }
     getNetmask(prefixLength,&netmask);
@@ -293,7 +297,7 @@ int main(int argc, char *argv[]){
           currentNode = currentNode->right;
         }
       }
-      printf("Rellenando prefijo en nodo %u\n", currentNode->n);
+      //printf("Rellenando prefijo en nodo %u\n", currentNode->n);
       currentLista = headNode; // importante borrar la lista en cada iteración (head = null)
       printf("Lista: ");
       while(currentLista != NULL){
