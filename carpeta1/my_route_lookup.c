@@ -181,10 +181,25 @@ void addMarker(uint32_t dir,int prefixLength, short defaultInterface, nodo *firs
   }
 }
 
+void free_hash_list(entrada head){
+  if(head != NULL){
+    if(head->next != NULL){
+      free_list(head->next)
+    }
+    free(head);
+  }
+}
+
 void free_tree(nodo *raiz){
   if(raiz->left != NULL) free_tree(raiz->left);
   if(raiz->right != NULL) free_tree(raiz->right);
-  if(raiz->tabla != NULL) free(raiz->tabla);
+  int i = 0;
+  if(raiz->tabla != NULL){
+    for(i=0;i<raiz->size_tabla,i++){
+      free_hash_list(raiz[i]->next)
+    }
+    free(raiz->tabla);
+  }
   free(raiz);
   return;
 }
