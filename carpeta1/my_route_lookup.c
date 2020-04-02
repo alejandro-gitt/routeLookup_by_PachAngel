@@ -24,43 +24,6 @@ typedef struct nodo{
   struct nodo *right;
   struct nodo *nextToMark;
 }nodo;
-// nuevo tipo de nodo dummy??
-
-
-/*
-método que recibe una tabla con una memoria insuficiente, se le adjudica más memoria,
-de momento una cantidad fija (mediante realloc)
-entradas:
-  - Puntero a la tabla
-  - Puntero a tabla nueva
-salidas:z
-  - nuevo puntero con mayor espacio reservado (COEFICIENTE*tamaño_anterior)
-*/
-
-entrada *redimensiona(entrada *tabla_in,int *tam_tabla){
-    int size_tabla=*tam_tabla;
-    entrada *nueva_tabla = calloc(COEFICIENTE+size_tabla,sizeof(entrada));
-
-    if(nueva_tabla == NULL){
-      printf("%s\n","Asignación fallida");
-      return 0;
-    }else{
-      //Asignación conseguida
-      printf("%s\n", "Asignación realizada");
-      /*Recorremos toda la tabla antigua, extrayendo los prefijos y añadiendolos en la nueva*/
-      int i;
-      for (i = 0; i < size_tabla; i++){
-        if(tabla_in[i].marker_flag == 0 && tabla_in[i].prefix_flag == 0){
-          //es una posición vacía
-        }else{
-          nueva_tabla[hash(tabla_in[i].prefijo,COEFICIENTE+size_tabla)] = tabla_in[i];
-        }
-      }
-      free(tabla_in);
-      *tam_tabla = size_tabla+COEFICIENTE;
-      return nueva_tabla;
-    }
-}
 
 nodo *crearNodo(nodo *raiz, char n, char param_nivel){
   char n_aux = raiz->n;
