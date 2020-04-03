@@ -33,8 +33,6 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
         else{
           nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
           nodo_aux->n = n_aux-param_nivel;
-          printf("%s= %d\n","nodo a punto de crear",nodo_aux->n );
-
           nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
           nodo_aux->size_tabla = TAMANO_INICIAL;
           nodo_aux->left = NULL;
@@ -91,7 +89,6 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
 }
 
 short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numberOfTableAccesses){
-  printf("%s====%u\n","defaultencalc",defaultInterface );
   int netmask = 0;
   getNetmask(raiz->n,&netmask);
   uint32_t prefix = dir & (uint32_t)netmask;
@@ -114,22 +111,19 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
       next_hop = currentItem->siguiente_salto;
       if(currentItem->marker_flag != 0){
         currentNode = currentNode->right;
-      //  printf("%s\n", "Me voy a la derecha");
       }
       else break;
     }else{
       currentNode = currentNode->left;
-    //  printf("%s\n", "Me voy a la izquierda");
     }
     if(currentNode != NULL){
       getNetmask(currentNode->n,&netmask);
     }else{
-    //  printf("%s\n", "NO hay nodo");
       break;
     }
     prefix = dir & netmask;
     *numberOfTableAccesses += 1;
-  }//end of while grande
+  }//end of while (currentNode != NULL)
   return next_hop;
 }
 
@@ -138,7 +132,6 @@ void addMarker(uint32_t dir,int prefixLength, short defaultInterface, nodo *firs
   nodo *currentNode = firstInList;
   int netmask;
   uint32_t prefix;
-  //printf("%s\n", "no estoy loco");
 
 
 
@@ -202,7 +195,7 @@ void imprimirPost(nodo *raiz)
 int main(int argc, char *argv[]){
 
   if(argc != 3) {
-    printf("%s\n","not enough arguments");
+    printf("%s\n","Incorrect number of arguments");
     return -1;
   }
 
@@ -243,7 +236,6 @@ int main(int argc, char *argv[]){
     errno = readFIBLine(&dir, &prefixLength, &outInterface);
     if(prefixLength == 0){
       defaultInterface = outInterface;
-      printf("%s= %u\n","default interface",defaultInterface );
       continue;
     }
     getNetmask(prefixLength,&netmask);
@@ -274,13 +266,10 @@ int main(int argc, char *argv[]){
           currentNode = currentNode->right;
         }
       }
-      currentLista = headNode; // importante borrar la lista en cada iteración (head = null)
-      printf("Lista: ");
+      currentLista = headNode;
       while(currentLista != NULL){
-        printf("%u ", currentLista->n);
         currentLista = currentLista->nextToMark;
       }
-      printf("\n");
       currentItem = &currentNode->tabla[hash(prefix >> (32-prefixLength),currentNode->size_tabla)];
       if(currentItem->prefix_flag != 0 || currentItem->marker_flag != 0){
         while(currentItem->prefijo != prefix){
@@ -318,7 +307,6 @@ int main(int argc, char *argv[]){
     errno = readInputPacketFileLine(&dir);
     clock_gettime(CLOCK_MONOTONIC_RAW, &initialTime);
     siguiente_salto = calc_next_hop(raiz,dir, defaultInterface, &numberOfTableAccesses);
-    printf("siguiente_salto = %u\n", siguiente_salto);
     clock_gettime(CLOCK_MONOTONIC_RAW, &finalTime);
     printOutputLine(dir, (int)siguiente_salto, &initialTime, &finalTime, &searchingTime, numberOfTableAccesses);
     TotalTime += searchingTime;
@@ -329,12 +317,6 @@ int main(int argc, char *argv[]){
   }while(errno != REACHED_EOF);
 
   printSummary(counter-1, totalTableAccesses/counter, TotalTime/counter);
-  printf("--------------------------\n\n");
-  //int i = 0;
-  // for(i=0;i<raiz->size_tabla;i++){
-  //  printf("%u\n",raiz->tabla[i].siguiente_salto);
-  // }
-  imprimirPost(raiz);
   free_tree(raiz);
   freeIO();
 }
