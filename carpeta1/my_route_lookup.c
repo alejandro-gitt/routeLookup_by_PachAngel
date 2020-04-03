@@ -4,26 +4,26 @@
 #include <stdio.h>
 #define COEFICIENTE 1
 #define TAMANO_INICIAL 3617
+typedef struct entrada entrada;
+typedef struct nodo nodo;
 
-typedef struct
-{
+struct nodo{
+  char n;
+  entrada *tabla;
+  int size_tabla;
+  nodo *parentNode;
+  nodo *left;
+  nodo *right;
+  nodo *nextToMark;
+};
+
+struct entrada{
   char marker_flag;
   char prefix_flag;
   uint32_t prefijo;
   short siguiente_salto;
-  struct entrada *next;
-}entrada;
-
-typedef struct nodo{
-  char n;
-
-  entrada *tabla;
-  int size_tabla;
-  struct nodo *parentNode;
-  struct nodo *left;
-  struct nodo *right;
-  struct nodo *nextToMark;
-}nodo;
+  entrada *next;
+};
 
 nodo *crearNodo(nodo *raiz, char n, char param_nivel){
   char n_aux = raiz->n;
@@ -52,8 +52,8 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
         nodo_aux->n = n_aux+param_nivel;
 
         if(nodo_aux->n == 31) nodo_aux->n = 32;
-        nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada ));
 
+        nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada ));
         nodo_aux->size_tabla = TAMANO_INICIAL;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
@@ -73,19 +73,14 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
   uint32_t prefix = dir & (uint32_t)netmask;
   short next_hop = defaultInterface;
   nodo *currentNode = raiz;
-  //printf("En el nodo 16\n");
   entrada *currentItem = NULL;
   *numberOfTableAccesses += 1;
   while (currentNode != NULL){
-  //  printf("En el nodo %u\n",currentNode->n);
     currentItem = &currentNode->tabla[hash(prefix >> (32-currentNode->n),currentNode->size_tabla)];
-    // printf("Prefijo calculado a partir de netmask: %u\n",prefix);
-    // printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
     if(currentItem->prefix_flag != 0 || currentItem->marker_flag != 0){
       while(currentItem->prefijo != prefix){
         if(currentItem->next != NULL){
           currentItem = currentItem->next;
-          //printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
           *numberOfTableAccesses += 1;
         }else break;
       }
@@ -238,29 +233,23 @@ int main(int argc, char *argv[]){
 
       while(currentNode->n != prefixLength){
         if(currentNode->n > prefixLength){
-          //printf("mayor");
           if(currentNode->left == NULL) crearNodo(raiz,prefixLength,raiz->n/2);
-      //    parentNode = currentNode;
           currentNode = currentNode->left;
         }
         else{
-          //printf("menor");
           if(currentNode->right == NULL) crearNodo(raiz,prefixLength,raiz->n/2);
-          /*Añadiendo currentNode a la lista para añadir marker (mark_list)*/
-          if(headNode == NULL){//mark_list estaba vacía, añadimos el primer elemento
+          /*Añadiendo currentNode a la lista para añadir marker*/
+          if(headNode == NULL){
             headNode = currentNode;
             tailNode = headNode;
-          }else{//mark_list no estaba vacía, añadimos al final:
+          }else{
             currentNode->nextToMark = NULL;
             tailNode->nextToMark = currentNode;
             tailNode = currentNode;
           }
-          /*Añadido a la lista*/
-          //parentNode = currentNode;
           currentNode = currentNode->right;
         }
       }
-      //printf("Rellenando prefijo en nodo %u\n", currentNode->n);
       currentLista = headNode; // importante borrar la lista en cada iteración (head = null)
       printf("Lista: ");
       while(currentLista != NULL){
@@ -292,8 +281,6 @@ int main(int argc, char *argv[]){
     }
   }while(errno != REACHED_EOF);
   errno = 0;
-
-   //printf("%d\n",calc_next_hop(raiz,3512205399));
   dir = 0;
   short siguiente_salto = 0;
   struct timespec initialTime;
