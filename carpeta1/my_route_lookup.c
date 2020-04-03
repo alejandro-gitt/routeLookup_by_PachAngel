@@ -2,8 +2,7 @@
 #include "utils.h"
 #include <time.h>
 #include <stdio.h>
-#define COEFICIENTE 1
-#define TAMANO_INICIAL 3617
+#define TAMANO_INICIAL 3851
 typedef struct entrada entrada;
 typedef struct nodo nodo;
 
@@ -32,17 +31,17 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
     if(n < n_aux){
         if(raiz->left != NULL) return crearNodo(raiz->left,n,param_nivel/2);
         else{
-            nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
-            nodo_aux->n = n_aux-param_nivel;
-            printf("%s= %d\n","nodo a punto de crear",nodo_aux->n );
+          nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
+          nodo_aux->n = n_aux-param_nivel;
+          printf("%s= %d\n","nodo a punto de crear",nodo_aux->n );
 
-            nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
-            nodo_aux->size_tabla = TAMANO_INICIAL;
-            nodo_aux->left = NULL;
-            nodo_aux->right = NULL;
-            nodo_aux->nextToMark = NULL;
-            raiz->left = nodo_aux;
-            return nodo_aux;
+          nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
+          nodo_aux->size_tabla = TAMANO_INICIAL;
+          nodo_aux->left = NULL;
+          nodo_aux->right = NULL;
+          nodo_aux->nextToMark = NULL;
+          raiz->left = nodo_aux;
+          return nodo_aux;
         }
     }
     else{
@@ -50,14 +49,39 @@ nodo *crearNodo(nodo *raiz, char n, char param_nivel){
       else{
         nodo *nodo_aux = (nodo*)calloc(1,sizeof(nodo));
         nodo_aux->n = n_aux+param_nivel;
-
-        if(nodo_aux->n == 31) nodo_aux->n = 32;
-
-        nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada ));
+        nodo_aux->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
         nodo_aux->size_tabla = TAMANO_INICIAL;
         nodo_aux->left = NULL;
         nodo_aux->right = NULL;
         nodo_aux->nextToMark = NULL;
+        if(nodo_aux->n == 30){//Construcción del los nodos por debajo del 30 (29, 31 y 32)
+          //manualmente, ya que esta parte del arbol no sigue el mismo patrón.
+          //Los nodos 29 y 32 serán descendientes del 30 y el 31 será descendiente del 32
+          nodo_aux->right = (nodo*)calloc(1,sizeof(nodo));
+          nodo_aux->right->n = 32;
+          nodo_aux->right->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
+          nodo_aux->right->size_tabla = TAMANO_INICIAL;
+          nodo_aux->right->right = NULL;
+          nodo_aux->right->nextToMark = NULL;
+
+          nodo_aux->right->left = (nodo*)calloc(1,sizeof(nodo));
+          nodo_aux->right->left->n = 31;
+          nodo_aux->right->left->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
+          nodo_aux->right->left->size_tabla = TAMANO_INICIAL;
+          nodo_aux->right->left->left = NULL;
+          nodo_aux->right->left->right = NULL;
+          nodo_aux->right->left->nextToMark= NULL;
+
+          nodo_aux->left = (nodo*)calloc(1,sizeof(nodo));
+          nodo_aux->left->n = 29;
+          nodo_aux->left->tabla = (entrada*)calloc(TAMANO_INICIAL,sizeof(entrada));
+          nodo_aux->left->size_tabla = TAMANO_INICIAL;
+          nodo_aux->left->left = NULL;
+          nodo_aux->left->right = NULL;
+          nodo_aux->left->nextToMark = NULL;
+
+        }
+
         raiz->right = nodo_aux;
         return nodo_aux;
       }
@@ -304,8 +328,7 @@ int main(int argc, char *argv[]){
     counter += 1;
   }while(errno != REACHED_EOF);
 
-  printSummary(counter, totalTableAccesses/counter, TotalTime/counter);
-  printMemoryTimeUsage();
+  printSummary(counter-1, totalTableAccesses/counter, TotalTime/counter);
   printf("--------------------------\n\n");
   //int i = 0;
   // for(i=0;i<raiz->size_tabla;i++){
