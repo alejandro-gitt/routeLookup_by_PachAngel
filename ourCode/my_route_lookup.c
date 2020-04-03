@@ -92,7 +92,6 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
   int netmask = 0;
   getNetmask(raiz->n,&netmask);
   uint32_t prefix = dir & (uint32_t)netmask;
-  printf("Prefijo a buscar: %u\n", prefix);
   short next_hop = defaultInterface;
   nodo *currentNode = raiz;
   entrada *currentItem = NULL;
@@ -108,21 +107,13 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
       }
     }
     if(currentItem->prefijo == prefix && (currentItem->marker_flag != 0 || currentItem->prefix_flag != 0)){
-      printf("%s\n", "Existe match");
-      printf("Prefijo en el nodo: %u\n",currentItem->prefijo);
-      printf("Flag prefijo: %u\n",currentItem->prefix_flag);
-      printf("Flag marker: %u\n",currentItem->marker_flag);
-      printf("Siguiente salto: %u\n",currentItem->siguiente_salto);
       if(currentItem->siguiente_salto != 0) next_hop = currentItem->siguiente_salto;
       if(currentItem->marker_flag != 0){
         currentNode = currentNode->right;
-        if(currentNode != NULL) printf("%s %u\n", "Me voy al nodo",currentNode->n);
       }
       else break;
     }else{
-      printf("%s\n", "No hay match");
       currentNode = currentNode->left;
-      if(currentNode != NULL) printf("%s %u\n", "Me voy al nodo",currentNode->n);
     }
     if(currentNode != NULL){
       getNetmask(currentNode->n,&netmask);
@@ -132,7 +123,6 @@ short calc_next_hop(nodo *raiz, uint32_t dir, short defaultInterface, int *numbe
     prefix = dir & netmask;
     *numberOfTableAccesses += 1;
   }//end of while (currentNode != NULL)
-  printf("Finalmente salgo con salto %u\n", next_hop);
   return next_hop;
 }
 
@@ -241,7 +231,6 @@ int main(int argc, char *argv[]){
   }
 
   do{
-    //printf(" val del counter: %i\n",counter);
     errno = readFIBLine(&dir, &prefixLength, &outInterface);
     if(prefixLength == 0){
       defaultInterface = outInterface;
@@ -312,7 +301,6 @@ int main(int argc, char *argv[]){
   numberOfTableAccesses = 0;
   int totalTableAccesses = 0;
   counter = 0;
-  printf("%s\n","-----------------------------");
   while(1){
     errno = readInputPacketFileLine(&dir);
     if(errno == REACHED_EOF) break;
